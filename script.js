@@ -1,17 +1,18 @@
-
 /* =========================================================
    CONFIG — edit these two lines to match your GitHub repo
    ========================================================= */
 const GITHUB_USER = "AbuNim61";
 const GITHUB_REPO  = "editingportofolio";
+const GITHUB_BRANCH = "main";
 const IMAGES_FOLDER = "images"; // folder in your repo holding portfolio images
 
 /* =========================================================
    Auto-loading gallery
-   Reads the contents of /images from your GitHub repo via
-   the public GitHub API — no login, no database needed.
-   Just drag new images into that folder on github.com and
-   they'll appear here automatically on next page load.
+   Uses jsDelivr's free public CDN/API to list files in your
+   GitHub repo's images folder — no login, no database, and
+   (unlike GitHub's own API) a rate limit generous enough for
+   real visitors. Just drag new images into that folder on
+   github.com and they'll appear here automatically.
    ========================================================= */
 const gallery = document.getElementById('gallery');
 const countTag = document.getElementById('count-tag');
@@ -31,15 +32,22 @@ function titleFromFilename(name){
 }
 
 async function loadGallery(){
-  const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${IMAGES_FOLDER}`;
-  try{
-    const res = await fetch(apiUrl);
-    if(!res.ok) throw new Error('Could not read images folder');
-    const files = await res.json();
+  // jsDelivr's data API lists every file in the repo (flat list)
+  const listUrl = `https://data.jsdelivr.com/v1/package/gh/${GITHUB_USER}/${GITHUB_REPO}@${GITHUB_BRANCH}/flat`;
 
-    const images = files.filter(f =>
-      f.type === 'file' && /\.(jpe?g|png|gif|webp)$/i.test(f.name)
-    );
+  try{
+    const res = await fetch(listUrl);
+    if(!res.ok) throw new Error('Could not read repo file list');
+    const data = await res.json();
+
+    const prefix = `/${IMAGES_FOLDER}/`;
+    const images = data.files
+      .filter(f => f.name.startsWith(prefix) && /\.(jpe?g|png|gif|webp)$/i.test(f.name))
+      .map(f => ({
+        name: f.name.slice(prefix.length),
+        // jsDelivr CDN URL — fast, cached, generous free rate limit
+        url: `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${GITHUB_REPO}@${GITHUB_BRANCH}${f.name}`
+      }));
 
     if(images.length === 0){
       gallery.innerHTML = `<div class="state-msg">No images yet — add files to /${IMAGES_FOLDER} on GitHub and refresh.</div>`;
@@ -55,7 +63,7 @@ async function loadGallery(){
       el.className = 'frame';
       el.innerHTML = `
         <div class="thumb-box">
-          <img src="${file.download_url}" alt="${titleFromFilename(file.name)}" loading="lazy">
+          <img src="${file.url}" alt="${titleFromFilename(file.name)}" loading="lazy">
         </div>
         <div class="meta">
           <span>${titleFromFilename(file.name)}</span>
@@ -63,11 +71,11 @@ async function loadGallery(){
         </div>
         <div class="scrub"></div>
       `;
-      el.addEventListener('click', () => openLightbox(file.download_url, titleFromFilename(file.name)));
+      el.addEventListener('click', () => openLightbox(file.url, titleFromFilename(file.name)));
       gallery.appendChild(el);
     });
   }catch(err){
-    gallery.innerHTML = `<div class="state-msg">Couldn't load images automatically. Check that GITHUB_USER and GITHUB_REPO are set correctly at the top of the script, and that the "${IMAGES_FOLDER}" folder exists in your repo.</div>`;
+    gallery.innerHTML = `<div class="state-msg">Couldn't load images automatically. Check that GITHUB_USER and GITHUB_REPO are set correctly at the top of script.js, and that the "${IMAGES_FOLDER}" folder exists in your repo.</div>`;
     countTag.textContent = 'error';
     console.error(err);
   }
