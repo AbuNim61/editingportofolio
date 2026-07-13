@@ -2,7 +2,7 @@
 /* =========================================================
    CONFIG — edit these two lines to match your GitHub repo
    ========================================================= */
-const GITHUB_USER = "Abunim61";
+const GITHUB_USER = "AbuNim61";
 const GITHUB_REPO  = "editingportofolio";
 const IMAGES_FOLDER = "images"; // folder in your repo holding portfolio images
 
