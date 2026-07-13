@@ -1,5 +1,4 @@
-
-  :root{
+:root{
     --bg: #F4F8FB;
     --surface: #E4EEF6;
     --surface-2: #D6E5F0;
@@ -303,3 +302,4 @@
     footer{ flex-direction: column; align-items:flex-start; }
     footer .links a{ margin-left: 0; margin-right: 18px; }
   }
+</style>
